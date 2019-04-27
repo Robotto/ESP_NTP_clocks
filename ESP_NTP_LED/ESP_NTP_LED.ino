@@ -199,50 +199,57 @@ time_t getNtpTime()
  * Edited from avr-libc/include/util/eu_dst.h
  * (c)2012 Michael Duane Rice All rights reserved.
 */
+
+//DST goes true on the last sunday of march @ 2:00 (CET)
+//DST goes false on the last sunday of october @ 3:00 (CEST)
+ 
 #define MARCH 3
 #define OCTOBER 10
-#define SHIFTHOUR 1 //UTC!
+#define SHIFTHOUR 2 
 
-int getDst(time_t epoch){ //returns DST offset in seconds
-  
-  //unsigned long epoch = this->getEpochTime();
+int getDst(time_t epoch) { //eats local time (CET/CEST)
 
-        uint8_t         mon, mday, hh, day_of_week, d;
-        int             n;
-                        //DST goes true on the last sunday of march @ 1:00 UTC (2AM CET)
-                        //DST goes false on the last sunday of october @ 1:00 UTC (3AM CET)
-                        mon = month(epoch);
-                        day_of_week = weekday(epoch)-1; //paul's library sets sunday==1, this code expects "days since sunday" http://www.cplusplus.com/reference/ctime/tm/
-                        mday = day(epoch) - 1;
-                        hh = hour(epoch);
-                       //DEBUG:
-                      uint8_t mm=minute(epoch);
-                      uint8_t ss=second(epoch);
+  uint8_t mon, mday, hh, day_of_week, d;
+  int n;
 
-        if              ((mon > MARCH) && (mon < OCTOBER)) return 3600;
-        if              (mon < MARCH) return 0;
-        if              (mon > OCTOBER) return 0;
-        /* determine mday of last Sunday */
-                        n = day(epoch) - 1;
-                        n -= day_of_week;
-                        n += 7;
-                        d = n % 7;  /* date of first Sunday */
-                        n = 31 - d;
-                        n /= 7; /* number of Sundays left in the month */
-                        d = d + 7 * n;  /* mday of final Sunday */
-        if  (mon == MARCH) {
-            if (d > mday) return 0;
-            if (d < mday) return 3600;
-            if (hh < SHIFTHOUR) return 0;
-            return 3600;
-            }
-        //the month is october:
-        if              (d > mday) return 3600;
-        if              (d < mday) return 0;
-        if              (hh < SHIFTHOUR) return 3600;
- 
-    return 0;
-    }
+  mon = month(epoch);
+  day_of_week = weekday(epoch)-1; //paul's library sets sunday==1, this code expects "days since sunday" http://www.cplusplus.com/reference/ctime/tm/
+  mday = day(epoch)-1; //zero index the day as well
+  hh = hour(epoch);
+
+  if ((mon > MARCH) && (mon < OCTOBER)) return 3600;
+  if (mon < MARCH) return 0;
+  if (mon > OCTOBER) return 0;
+
+  //determine mday of last Sunday 
+  n = mday;
+  n -= day_of_week;
+  n += 7;
+  d = n % 7;  // date of first Sunday
+  if(d==0) d=7; //if the month starts on a monday, the first sunday is on the seventh.
+
+  n = 31 - d;
+  n /= 7; //number of Sundays left in the month 
+
+  d = d + 7 * n;  // mday of final Sunday 
+
+  //If the 1st of the month is a thursday, the last sunday will be on the 25th.
+  //Apparently this algorithm calculates it to be on the 32nd...
+  //Dirty fix, until something smoother comes along:
+  if(d==31) d=24;
+
+  if (mon == MARCH) {
+    if (d > mday) return 0;
+    if (d < mday) return 3600;
+    if (hh < SHIFTHOUR) return 0;
+    return 3600;
+  }
+  //the month is october:
+  if (d > mday) return 3600; 
+  if (d < mday) return 0; 
+  if (hh < SHIFTHOUR+1) return 3600;
+  return 0;
+}
 // send an NTP request to the time server at the given address
 void sendNTPpacket(IPAddress &address)
 {
