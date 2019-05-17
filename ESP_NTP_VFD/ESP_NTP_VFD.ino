@@ -210,8 +210,18 @@ void numberOut(int hex,int grid)
 static unsigned int numberOutRunCounter;
 numberOutRunCounter++;
 const int grid_array[4] = {7,8,9,10}; //ignore the colon grid, just number the numbers 1-4
+const int flipped_grid_array[4] = {10,9,8,7}; //trying it upside down
     
 const int num_array[0x10][7] = {  
+//                           7-segment map:
+//                                AAA
+//                               F   B
+//                               F   B
+//                                GGG
+//                               E   C
+//                               E   C
+//                                DDD
+//                          A B C D E F G
                           { 1,1,1,1,1,1,0 },    // 0
                           { 0,1,1,0,0,0,0 },    // 1
                           { 1,1,0,1,1,0,1 },    // 2
@@ -228,6 +238,25 @@ const int num_array[0x10][7] = {
                           { 0,1,1,1,1,0,1 },    // d
                           { 1,0,0,1,1,1,1 },    // E
                           { 1,0,0,0,1,1,1 }};   // F
+
+  const int flipped_num_array[0x10][7] = {
+//                          A B C D E F G
+                          { 1,1,1,1,1,1,0 },    // 0
+                          { 0,0,0,0,1,1,0 },    // 1
+                          { 1,1,0,1,1,0,1 },    // 2
+                          { 1,0,0,1,1,1,1 },    // 3
+                          { 0,0,1,0,1,1,1 },    // 4
+                          { 1,0,1,1,0,1,1 },    // 5
+                          { 1,1,1,0,0,1,1 },    // 6
+                          { 0,0,0,1,1,1,0 },    // 7
+                          { 1,1,1,1,1,1,1 },    // 8
+                          { 1,0,1,1,1,1,1 },    // 9 --
+                          { 0,1,1,1,1,1,1 },    // A
+                          { 1,1,1,0,0,1,1 },    // b
+                          { 1,1,1,1,0,0,0 },    // C 
+                          { 1,1,0,0,1,1,1 },    // d
+                          { 1,1,1,1,0,0,1 },    // E
+                          { 0,1,1,1,0,0,1 }};   // F
   //flip colon every 500ms
   if(colon==true && numberOutRunCounter%4==0) digitalWrite(dinPin,HIGH);
   else digitalWrite(dinPin,LOW);
@@ -238,8 +267,10 @@ const int num_array[0x10][7] = {
   for (int i = 10; i >=0; i--) //clock in bits 10 downto 0
   {
       digitalWrite(dinPin,LOW); //default to low 
-      if(i==grid_array[grid-1]) digitalWrite(dinPin,HIGH);
-      if(i<7) digitalWrite(dinPin,num_array[hex][i]);
+      //if(i==grid_array[grid-1]) digitalWrite(dinPin,HIGH);
+      if(i==flipped_grid_array[grid-1]) digitalWrite(dinPin,HIGH);
+      //if(i<7) digitalWrite(dinPin,num_array[hex][i]);
+      if(i<7) digitalWrite(dinPin,flipped_num_array[hex][i]);
       digitalWrite(clkPin, HIGH);
       digitalWrite(clkPin, LOW);
   }  
